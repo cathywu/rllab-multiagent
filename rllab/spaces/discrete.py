@@ -11,6 +11,7 @@ class Discrete(Space):
 
     def __init__(self, n):
         self._n = n
+        self._items_arr = np.array(range(n))
 
     @property
     def n(self):
@@ -18,6 +19,9 @@ class Discrete(Space):
 
     def sample(self):
         return np.random.randint(self.n)
+
+    def sample_n(self, n):
+        return np.random.randint(low=0, high=self.n, size=n)
 
     def contains(self, x):
         x = np.asarray(x)
@@ -27,6 +31,8 @@ class Discrete(Space):
         return "Discrete(%d)" % self.n
 
     def __eq__(self, other):
+        if not isinstance(other, Discrete):
+            return False
         return self.n == other.n
 
     def flatten(self, x):
@@ -47,6 +53,9 @@ class Discrete(Space):
 
     def weighted_sample(self, weights):
         return special.weighted_sample(weights, range(self.n))
+
+    def weighted_sample_n(self, weights_matrix):
+        return special.weighted_sample_n(weights_matrix, self._items_arr)
 
     @property
     def default_value(self):

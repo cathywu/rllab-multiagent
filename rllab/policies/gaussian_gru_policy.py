@@ -14,7 +14,7 @@ from rllab.misc.overrides import overrides
 from rllab.policies.base import StochasticPolicy
 
 
-class GaussianGRUPolicy(StochasticPolicy, LasagnePowered):
+class GaussianGRUPolicy(StochasticPolicy, LasagnePowered, Serializable):
     def __init__(
             self,
             env_spec,
@@ -89,6 +89,7 @@ class GaussianGRUPolicy(StochasticPolicy, LasagnePowered):
         self._prev_hidden = None
         self._hidden_sizes = hidden_sizes
         self._dist = RecurrentDiagonalGaussian(action_dim)
+        self.vectorized = 0
 
         self.reset()
 

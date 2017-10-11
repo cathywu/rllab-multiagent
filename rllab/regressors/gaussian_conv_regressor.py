@@ -17,7 +17,7 @@ from rllab.misc.ext import iterate_minibatches_generic
 from rllab.misc import logger
 
 
-class GaussianConvRegressor(LasagnePowered):
+class GaussianConvRegressor(LasagnePowered, Serializable):
     """
     A class for performing regression by fitting a Gaussian distribution to the outputs.
     """
@@ -77,6 +77,7 @@ class GaussianConvRegressor(LasagnePowered):
         self._optimizer = optimizer
 
         self.input_shape = input_shape
+        self.output_dim = output_dim
         if mean_network is None:
             mean_network = ConvNetwork(
                 name="mean_network",
@@ -100,7 +101,7 @@ class GaussianConvRegressor(LasagnePowered):
                 input_var=mean_network.input_layer.input_var,
                 output_dim=output_dim,
                 conv_filters=std_conv_filters,
-                conv_filter_sizes=std_conv_filter_sizes,
+                conv_filter_sizes=std_conv_filters_sizes,
                 conv_strides=std_conv_strides,
                 conv_pads=std_conv_pads,
                 hidden_sizes=std_hidden_sizes,

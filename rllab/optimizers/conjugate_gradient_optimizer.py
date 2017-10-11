@@ -294,3 +294,8 @@ class ConjugateGradientOptimizer(Serializable):
         logger.log("backtrack iters: %d" % n_iter)
         logger.log("computing loss after")
         logger.log("optimization finished")
+        return dict(
+            loss_before=loss_before,
+            loss_after=loss,
+            constraint_val=constraint_val,
+        )

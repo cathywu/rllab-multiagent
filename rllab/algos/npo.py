@@ -14,6 +14,7 @@ class NPO(BatchPolopt):
 
     def __init__(
             self,
+            idx=None,
             optimizer=None,
             optimizer_args=None,
             step_size=0.01,
@@ -27,10 +28,12 @@ class NPO(BatchPolopt):
         self.optimizer = optimizer
         self.step_size = step_size
         self.truncate_local_is_ratio = truncate_local_is_ratio
+        self.idx = idx
         super(NPO, self).__init__(**kwargs)
 
     @overrides
     def init_opt(self):
+        policy = self.policy if self.idx is None else self.policy.policies[self.idx]
         is_recurrent = int(self.policy.recurrent)
         obs_var = self.env.observation_space.new_tensor_variable(
             'obs',
@@ -45,7 +48,7 @@ class NPO(BatchPolopt):
             ndim=1 + is_recurrent,
             dtype=theano.config.floatX
         )
-        dist = self.policy.distribution
+        dist = policy.distribution
         old_dist_info_vars = {
             k: ext.new_tensor(
                 'old_%s' % k,
@@ -69,7 +72,7 @@ class NPO(BatchPolopt):
         else:
             valid_var = None
 
-        dist_info_vars = self.policy.dist_info_sym(obs_var, state_info_vars)
+        dist_info_vars = policy.dist_info_sym(obs_var, state_info_vars)
         kl = dist.kl_sym(old_dist_info_vars, dist_info_vars)
         lr = dist.likelihood_ratio_sym(action_var, old_dist_info_vars, dist_info_vars)
         if self.truncate_local_is_ratio is not None:
@@ -91,7 +94,7 @@ class NPO(BatchPolopt):
 
         self.optimizer.update_opt(
             loss=surr_loss,
-            target=self.policy,
+            target=policy,
             leq_constraint=(mean_kl, self.step_size),
             inputs=input_list,
             constraint_name="mean_kl"
@@ -100,13 +103,14 @@ class NPO(BatchPolopt):
 
     @overrides
     def optimize_policy(self, itr, samples_data):
+        policy = self.policy if self.idx is None else self.policy.policies[self.idx]
         all_input_values = tuple(ext.extract(
             samples_data,
             "observations", "actions", "advantages"
         ))
         agent_infos = samples_data["agent_infos"]
-        state_info_list = [agent_infos[k] for k in self.policy.state_info_keys]
-        dist_info_list = [agent_infos[k] for k in self.policy.distribution.dist_info_keys]
+        state_info_list = [agent_infos[k] for k in policy.state_info_keys]
+        dist_info_list = [agent_infos[k] for k in policy.distribution.dist_info_keys]
         all_input_values += tuple(state_info_list) + tuple(dist_info_list)
         if self.policy.recurrent:
             all_input_values += (samples_data["valids"],)

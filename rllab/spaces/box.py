@@ -29,6 +29,9 @@ class Box(Space):
     def sample(self):
         return np.random.uniform(low=self.low, high=self.high, size=self.low.shape)
 
+    def sample_n(self, n):
+        return np.random.uniform(low=self.low, high=self.high, size=(n,) + self.low.shape)
+
     def contains(self, x):
         return x.shape == self.shape and (x >= self.low).all() and (x <= self.high).all()
 
@@ -38,7 +41,7 @@ class Box(Space):
 
     @property
     def flat_dim(self):
-        return np.prod(self.low.shape)
+        return int(np.prod(self.low.shape))
 
     @property
     def bounds(self):
@@ -57,6 +60,10 @@ class Box(Space):
     def unflatten_n(self, xs):
         xs = np.asarray(xs)
         return xs.reshape((xs.shape[0],) + self.shape)
+
+    @property
+    def default_value(self):
+        return 0.5 * (self.low + self.high)
 
     def __repr__(self):
         return "Box" + str(self.shape)

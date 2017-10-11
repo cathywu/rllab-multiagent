@@ -2,7 +2,7 @@ import os
 
 USE_GPU = False
 
-DOCKER_IMAGE = "dementrock/rllab3-shared"
+DOCKER_IMAGE = "evinitsky/cistar-rllab"
 
 KUBE_PREFIX = "template_"
 
