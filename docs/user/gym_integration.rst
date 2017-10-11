@@ -21,7 +21,6 @@ provides a simple example of training an agent on the :code:`Pendulum-v0` enviro
     from rllab.misc.instrument import run_experiment_lite
     from rllab.policies.gaussian_mlp_policy import GaussianMLPPolicy
 
-
     def run_task(*_):
         env = normalize(GymEnv("Pendulum-v0"))
 

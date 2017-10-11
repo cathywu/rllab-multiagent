@@ -1,3 +1,5 @@
+import contextlib
+
 from path import Path
 import sys
 import pickle as pickle
@@ -7,6 +9,7 @@ from collections import OrderedDict
 import numpy as np
 import operator
 from functools import reduce
+import random
 
 sys.setrecursionlimit(50000)
 
@@ -118,6 +121,12 @@ def scanl(f, l, base=None):
 
 def scanr(f, l, base=None):
     return list(iscanr(f, l, base))
+
+
+def delete(dict, key):
+    new_d = dict.copy()
+    new_d.pop(key)
+    return new_d
 
 
 def compile_function(inputs=None, outputs=None, updates=None, givens=None, log_name=None, **kwargs):

@@ -1,58 +1,29 @@
-
-
 import numpy as np
-from rllab.misc import special
-from rllab.misc import tensor_utils
+
 from rllab.algos import util
-import rllab.misc.logger as logger
+from rllab.misc import special
+from rllab.misc import logger
+from sandbox.rocky.tf.misc import tensor_utils
 
 
-class Sampler(object):
-    def start_worker(self):
-        """
-        Initialize the sampler, e.g. launching parallel workers if necessary.
-        """
-        raise NotImplementedError
+class DefaultSampleProcessor(object):
 
-    def obtain_samples(self, itr, max_path_length, batch_size):
-        """
-        Collect samples for the given iteration number.
-        :param itr: Iteration number.
-        :return: A list of paths.
-        """
-        raise NotImplementedError
-
-    def process_samples(self, itr, paths):
-        """
-        Return processed sample data (typically a dictionary of concatenated tensors) based on the collected paths.
-        :param itr: Iteration number.
-        :param paths: A list of collected paths.
-        :return: Processed sample data.
-        """
-        raise NotImplementedError
-
-    def shutdown_worker(self):
-        """
-        Terminate workers if necessary.
-        """
-        raise NotImplementedError
-
-
-class BaseSampler(Sampler):
     def __init__(self, algo):
-        """
-        :type algo: BatchPolopt
-        """
         self.algo = algo
 
     def process_samples(self, itr, paths):
         baselines = []
         returns = []
 
-        if hasattr(self.algo.baseline, "predict_n"):
-            all_path_baselines = self.algo.baseline.predict_n(paths)
+        if len(paths) > 0 and "vf" in paths[0]["agent_infos"]:
+            all_path_baselines = [
+                p["agent_infos"]["vf"].flatten() for p in paths
+            ]
         else:
-            all_path_baselines = [self.algo.baseline.predict(path) for path in paths]
+            if hasattr(self.algo.baseline, "predict_n"):
+                all_path_baselines = self.algo.baseline.predict_n(paths)
+            else:
+                all_path_baselines = [self.algo.baseline.predict(path) for path in paths]
 
         for idx, path in enumerate(paths):
             path_baselines = np.append(all_path_baselines[idx], 0)
@@ -170,13 +141,11 @@ class BaseSampler(Sampler):
         logger.record_tabular('Iteration', itr)
         logger.record_tabular('AverageDiscountedReturn',
                               average_discounted_return)
-        logger.record_tabular('AverageReturn', np.mean(undiscounted_returns))
         logger.record_tabular('ExplainedVariance', ev)
         logger.record_tabular('NumTrajs', len(paths))
+        logger.record_tabular_misc_stat('TrajLen', [len(p["rewards"]) for p in paths], placement='front')
         logger.record_tabular('Entropy', ent)
         logger.record_tabular('Perplexity', np.exp(ent))
-        logger.record_tabular('StdReturn', np.std(undiscounted_returns))
-        logger.record_tabular('MaxReturn', np.max(undiscounted_returns))
-        logger.record_tabular('MinReturn', np.min(undiscounted_returns))
+        logger.record_tabular_misc_stat('Return', undiscounted_returns, placement='front')
 
         return samples_data

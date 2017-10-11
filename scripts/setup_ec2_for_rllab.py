@@ -216,6 +216,7 @@ def setup_s3():
         s3_client.create_bucket(
             ACL='private',
             Bucket=S3_BUCKET_NAME,
+            CreateBucketConfiguration={'LocationConstraint':'us-west-1'}
         )
     except botocore.exceptions.ClientError as e:
         if e.response['Error']['Code'] == 'BucketAlreadyExists':

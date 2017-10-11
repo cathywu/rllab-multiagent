@@ -1,7 +1,7 @@
 name: rllab-multiagent
 channels:
     - https://conda.anaconda.org/kne 
-    - https://conda.anaconda.org/tlatorre 
+#    - https://conda.anaconda.org/tlatorre 
     - https://conda.anaconda.org/cjs14
     - https://conda.anaconda.org/menpo
     - jjhelmus
@@ -29,7 +29,7 @@ dependencies:
     - pandas
     - pip:
         - Pillow
-        - atari-py
+        # - atari-py
         - pyprind
         - ipdb
         - boto3
@@ -62,3 +62,4 @@ dependencies:
         - pylru==1.0.9
         - hyperopt
         - polling
+        - lxml
