@@ -136,15 +136,16 @@ class BatchPolopt(RLAlgorithm):
         self.sampler.shutdown_worker()
 
     def obtain_samples(self, itr):
-        if isinstance(self.sampler, VectorizedSampler):
-            return self.sampler.obtain_samples(
-                max_path_length=self.max_path_length,
-                batch_size=self.batch_size
-            )
-        else:
+        # if isinstance(self.sampler, VectorizedSampler):
+        #     return self.sampler.obtain_samples(
+        #         max_path_length=self.max_path_length,
+        #         batch_size=self.batch_size
+        #     )
+        # else:
             return self.sampler.obtain_samples(itr)
 
     def process_samples(self, itr, paths):
+        import ipdb; ipdb.set_trace()
         if self.policy.vectorized:
             return self.sample_processor.process_samples(itr, paths)
         else:
@@ -156,6 +157,7 @@ class BatchPolopt(RLAlgorithm):
         for itr in range(self.current_itr, self.n_itr):
             with logger.prefix('itr #%d | ' % itr):
                 paths = self.obtain_samples(itr)
+                import ipdb; ipdb.set_trace()
                 samples_data = self.process_samples(itr, paths)
                 # TOFIX(eugene) why is this here, and can I get rid of it?
                 self.log_diagnostics(paths)

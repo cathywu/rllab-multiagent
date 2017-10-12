@@ -89,7 +89,6 @@ class MultiMLPPolicy(StochasticPolicy, LasagnePowered, Serializable):
                 self.env_spec[i].observation_space.flatten_n(observations_n[i])
                 for i in range(n)]
         # FIXME(eugene) check if log_std is being computed correctly...
-        import ipdb; ipdb.set_trace()
         dist_info_n = [dict(zip(['mean', 'log_std'], self.policies[i]._f_dist(flat_obs_n[i]))) for i in
                        range(n)]
         actions_n = [
