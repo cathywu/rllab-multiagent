@@ -145,7 +145,6 @@ class BatchPolopt(RLAlgorithm):
             return self.sampler.obtain_samples(itr)
 
     def process_samples(self, itr, paths):
-        import ipdb; ipdb.set_trace()
         if self.policy.vectorized:
             return self.sample_processor.process_samples(itr, paths)
         else:
@@ -157,7 +156,6 @@ class BatchPolopt(RLAlgorithm):
         for itr in range(self.current_itr, self.n_itr):
             with logger.prefix('itr #%d | ' % itr):
                 paths = self.obtain_samples(itr)
-                import ipdb; ipdb.set_trace()
                 samples_data = self.process_samples(itr, paths)
                 # TOFIX(eugene) why is this here, and can I get rid of it?
                 self.log_diagnostics(paths)
