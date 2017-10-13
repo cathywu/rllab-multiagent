@@ -46,7 +46,6 @@ class LinearFeatureBaseline(Baseline):
 
     @overrides
     def predict(self, path, idx=None):
-        import ipdb; ipdb.set_trace()
         if self._coeffs is None:
             if idx is not None:
                 return np.zeros(len(path["rewards"][idx]))
