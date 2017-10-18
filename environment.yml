@@ -1,4 +1,4 @@
-name: rllab3
+name: flow
 channels:
     - https://conda.anaconda.org/kne 
     - https://conda.anaconda.org/tlatorre 
@@ -38,7 +38,7 @@ dependencies:
         - pyzmq
         - tqdm
         - msgpack-python
-        - mujoco_py
+        # - mujoco_py
         - cached_property
         - line_profiler
         - cloudpickle
@@ -62,3 +62,4 @@ dependencies:
         - pylru==1.0.9
         - hyperopt
         - polling
+        - lxml
