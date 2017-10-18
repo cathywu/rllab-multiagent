@@ -4,6 +4,8 @@ import gym.envs
 import gym.spaces
 import traceback
 import logging
+from gym.envs.registration import register
+
 
 try:
     from gym.wrappers.monitoring import logger as monitor_logger
@@ -20,6 +22,9 @@ from rllab.spaces.box import Box
 from rllab.spaces.discrete import Discrete
 from rllab.spaces.product import Product
 from rllab.misc import logger
+from rllab.envs.shadow_env import ShadowEnv
+
+env_version_num = 0
 
 
 def convert_gym_space(space):
@@ -29,6 +34,11 @@ def convert_gym_space(space):
         return Discrete(n=space.n)
     elif isinstance(space, gym.spaces.Tuple):
         return Product([convert_gym_space(x) for x in space.spaces])
+    elif isinstance(space, list):
+        # For multiagent envs
+        return list(map(convert_gym_space, space))
+        # TODO(cathywu) refactor multiagent envs to use gym.spaces.Tuple
+        # (may be needed for pickling?)
     else:
         raise NotImplementedError
 
@@ -57,7 +67,7 @@ class NoVideoSchedule(object):
 
 class GymEnv(Env, Serializable):
     def __init__(self, env_name, record_video=True, video_schedule=None, log_dir=None, record_log=True,
-                 force_reset=False):
+                 force_reset=False, register_params=None):
         if log_dir is None:
             if logger.get_snapshot_dir() is None:
                 logger.log("Warning: skipping Gym environment monitoring since snapshot_dir not configured.")
@@ -65,7 +75,8 @@ class GymEnv(Env, Serializable):
                 log_dir = os.path.join(logger.get_snapshot_dir(), "gym_log")
         Serializable.quick_init(self, locals())
 
-        env = gym.envs.make(env_name)
+        pass_params(*register_params)
+        env = gym.envs.make(env_name+'-v'+str(env_version_num))
         self.env = env
         self.env_id = env.spec.id
 
@@ -89,6 +100,8 @@ class GymEnv(Env, Serializable):
         self._horizon = env.spec.tags['wrapper_config.TimeLimit.max_episode_steps']
         self._log_dir = log_dir
         self._force_reset = force_reset
+        # For multi-agent envs
+        self._shadow_envs = self.construct_shadow_envs()
 
     @property
     def observation_space(self):
@@ -115,7 +128,7 @@ class GymEnv(Env, Serializable):
         next_obs, reward, done, info = self.env.step(action)
         return Step(next_obs, reward, done, **info)
 
-    def render(self):
+    def render(self, close=None):
         self.env.render()
 
     def terminate(self):
@@ -124,10 +137,43 @@ class GymEnv(Env, Serializable):
             if self._log_dir is not None:
                 print("""
     ***************************
-
     Training finished! You can upload results to OpenAI Gym by running the following command:
-
     python scripts/submit_gym.py %s
-
     ***************************
                 """ % self._log_dir)
+
+    @property
+    def shadow_envs(self):
+        """
+        For multi-agent envs
+        :return:
+        """
+        return self._shadow_envs
+
+    def construct_shadow_envs(self):
+        """
+        For multi-agent envs: Construct shadow envs for each of the agents.
+        :return:
+        """
+        shadow_envs = []
+        if not isinstance(self.observation_space, list):
+            return shadow_envs
+        for obs, action in zip(self.observation_space, self.action_space):
+            shadow_envs.append(ShadowEnv(observation_space=obs, action_space=action))
+        return shadow_envs
+
+
+def pass_params(env_name, sumo_params, type_params, env_params, net_params,
+                initial_config, scenario):
+    global env_version_num
+
+    num_steps = 500
+    env_version_num += 1
+    if "num_steps" in env_params.additional_params:
+        num_steps = env_params.additional_params["num_steps"]
+    register(
+        id=env_name+'-v'+str(env_version_num),
+        entry_point='flow.envs:'+env_name,
+        max_episode_steps=num_steps,
+        kwargs={"env_params": env_params, "sumo_params": sumo_params, "scenario": scenario}
+    )
