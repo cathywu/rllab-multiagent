@@ -1,5 +1,7 @@
-from sandbox.rocky.tf.core.parameterized import Parameterized
-import sandbox.rocky.tf.core.layers as L
+#from sandbox.rocky.tf.core.parameterized import Parameterized
+from rllab.core.parameterized import Parameterized
+#import sandbox.rocky.tf.core.layers as L
+import rllab.core.layers as L
 import itertools
 
 

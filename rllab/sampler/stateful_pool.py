@@ -56,9 +56,13 @@ class StatefulPool(object):
         if n_parallel > 1:
             self.queue = mp.Queue()
             self.worker_queue = mp.Queue()
-            self.pool = MemmapingPool(
-                self.n_parallel,
-                temp_folder="/tmp",
+            # FIXME: memmap is slow.
+            # self.pool = MemmapingPool(
+            #     self.n_parallel,
+            #     temp_folder="/tmp",
+            # )
+            self.pool = mp.Pool(
+                self.n_parallel
             )
 
     def run_each(self, runner, args_list=None):

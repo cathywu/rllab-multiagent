@@ -1,9 +1,13 @@
-from rllab.algos.base import RLAlgorithm
-from rllab.sampler import parallel_sampler
-from rllab.sampler.base import BaseSampler
+import numpy as np
+
 import rllab.misc.logger as logger
 import rllab.plotter as plotter
+from rllab.algos.base import RLAlgorithm
 from rllab.policies.base import Policy
+from rllab.sample_processors.default_sample_processor import DefaultSampleProcessor
+#from rllab.sample_processors.vectorized_sampler import VectorizedSampler
+from rllab.sampler import parallel_sampler
+from rllab.sampler.base import BaseSampler
 
 
 class BatchSampler(BaseSampler):
@@ -60,6 +64,10 @@ class BatchPolopt(RLAlgorithm):
             whole_paths=True,
             sampler_cls=None,
             sampler_args=None,
+            sample_processor_cls=None,
+            sample_processor_args=None,
+            n_vectorized_envs=None,
+            parallel_vec_env=False,
             **kwargs
     ):
         """
@@ -99,10 +107,25 @@ class BatchPolopt(RLAlgorithm):
         self.store_paths = store_paths
         self.whole_paths = whole_paths
         if sampler_cls is None:
-            sampler_cls = BatchSampler
-        if sampler_args is None:
-            sampler_args = dict()
-        self.sampler = sampler_cls(self, **sampler_args)
+            # if n_vectorized_envs is None:
+            #     n_vectorized_envs = min(100, max(1, int(np.ceil(batch_size / max_path_length))))
+
+            # FIXME commenting out the line below might break things
+            # if self.policy.vectorized:
+            #     self.sampler = VectorizedSampler(env=env, policy=policy, n_envs=n_vectorized_envs, parallel=parallel_vec_env)
+            # else:
+            if sampler_args is None:
+                sampler_args = dict()
+            self.sampler = BatchSampler(self, **sampler_args)
+
+        if sample_processor_cls is None:
+            sample_processor_cls = DefaultSampleProcessor
+        if sample_processor_args is None:
+            sample_processor_args = dict(algo=self)
+        else:
+            sample_processor_args = dict(sample_processor_args, algo=self)
+
+        self.sample_processor = sample_processor_cls(**sample_processor_args)
 
     def start_worker(self):
         self.sampler.start_worker()
@@ -112,19 +135,36 @@ class BatchPolopt(RLAlgorithm):
     def shutdown_worker(self):
         self.sampler.shutdown_worker()
 
+    def obtain_samples(self, itr):
+        # if isinstance(self.sampler, VectorizedSampler):
+        #     return self.sampler.obtain_samples(
+        #         max_path_length=self.max_path_length,
+        #         batch_size=self.batch_size
+        #     )
+        # else:
+            return self.sampler.obtain_samples(itr)
+
+    def process_samples(self, itr, paths):
+        if self.policy.vectorized:
+            return self.sample_processor.process_samples(itr, paths)
+        else:
+            return self.sampler.process_samples(itr, paths)
+
     def train(self):
         self.start_worker()
         self.init_opt()
         for itr in range(self.current_itr, self.n_itr):
             with logger.prefix('itr #%d | ' % itr):
-                paths = self.sampler.obtain_samples(itr)
-                samples_data = self.sampler.process_samples(itr, paths)
+                paths = self.obtain_samples(itr)
+                samples_data = self.process_samples(itr, paths)
+                # TOFIX(eugene) why is this here, and can I get rid of it?
                 self.log_diagnostics(paths)
                 self.optimize_policy(itr, samples_data)
                 logger.log("saving snapshot...")
                 params = self.get_itr_snapshot(itr, samples_data)
                 self.current_itr = itr + 1
-                params["algo"] = self
+                # FIXME(eugene) uncomment this line
+                #params["algo"] = self
                 if self.store_paths:
                     params["paths"] = samples_data["paths"]
                 logger.save_itr_params(itr, params)
@@ -141,7 +181,8 @@ class BatchPolopt(RLAlgorithm):
     def log_diagnostics(self, paths):
         self.env.log_diagnostics(paths)
         self.policy.log_diagnostics(paths)
-        self.baseline.log_diagnostics(paths)
+        # FIXME(eugene) support this later
+        #self.baseline.log_diagnostics(paths)
 
     def init_opt(self):
         """

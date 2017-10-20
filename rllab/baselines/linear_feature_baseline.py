@@ -16,16 +16,24 @@ class LinearFeatureBaseline(Baseline):
     def set_param_values(self, val, **tags):
         self._coeffs = val
 
-    def _features(self, path):
-        o = np.clip(path["observations"], -10, 10)
-        l = len(path["rewards"])
+    def _features(self, path, idx=None):
+        if idx is not None:
+            o = np.clip(path["observations"][idx], -10, 10)
+            l = len(path["rewards"][idx])
+        else:
+            o = np.clip(path["observations"], -10, 10)
+            l = len(path["rewards"])
+
         al = np.arange(l).reshape(-1, 1) / 100.0
         return np.concatenate([o, o ** 2, al, al ** 2, al ** 3, np.ones((l, 1))], axis=1)
 
     @overrides
-    def fit(self, paths):
-        featmat = np.concatenate([self._features(path) for path in paths])
-        returns = np.concatenate([path["returns"] for path in paths])
+    def fit(self, paths, idx=None):
+        featmat = np.concatenate([self._features(path, idx=idx) for path in paths])
+        if idx is not None:
+            returns = np.concatenate([path["returns"][idx] for path in paths])
+        else:
+            returns = np.concatenate([path["returns"] for path in paths])
         reg_coeff = self._reg_coeff
         for _ in range(5):
             self._coeffs = np.linalg.lstsq(
@@ -37,7 +45,10 @@ class LinearFeatureBaseline(Baseline):
             reg_coeff *= 10
 
     @overrides
-    def predict(self, path):
+    def predict(self, path, idx=None):
         if self._coeffs is None:
-            return np.zeros(len(path["rewards"]))
-        return self._features(path).dot(self._coeffs)
+            if idx is not None:
+                return np.zeros(len(path["rewards"][idx]))
+            else:
+                return np.zeros(len(path["rewards"]))
+        return self._features(path, idx=idx).dot(self._coeffs)
