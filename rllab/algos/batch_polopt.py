@@ -108,15 +108,17 @@ class BatchPolopt(RLAlgorithm):
         self.whole_paths = whole_paths
         if sampler_cls is None:
             if n_vectorized_envs is None:
-                n_vectorized_envs = min(100, max(1, int(np.ceil(batch_size / max_path_length))))
+                # we're not using vectorized envs
+                #n_vectorized_envs = min(100, max(1, int(np.ceil(batch_size / max_path_length))))
+                n_vectorized_envs = 1
 
-            # FIXME commenting out the line below might break things
+            if sampler_args is None:
+                sampler_args = dict()
             if self.policy.vectorized:
                 self.sampler = VectorizedSampler(env=env, policy=policy, n_envs=n_vectorized_envs)
             else:
                 self.sampler = BatchSampler(self, **sampler_args)
-            if sampler_args is None:
-                sampler_args = dict()
+
 
         if sample_processor_cls is None:
             sample_processor_cls = DefaultSampleProcessor
