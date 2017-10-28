@@ -63,7 +63,12 @@ class VectorizedSampler(BaseSampler):
 
             t = time.time()
 
-            agent_infos = tensor_utils.split_tensor_dict_list(agent_infos)
+            if isinstance(agent_infos, list):
+                n = len(agent_infos)
+                agent_infos = list(zip(*[tensor_utils.split_tensor_dict_list(agent_infos[i]) for i in range(n)]))
+            else:
+                agent_infos = tensor_utils.split_tensor_dict_list(agent_infos)
+
             env_infos = tensor_utils.split_tensor_dict_list(env_infos)
             if env_infos is None:
                 env_infos = [dict() for _ in range(self.vec_env.num_envs)]

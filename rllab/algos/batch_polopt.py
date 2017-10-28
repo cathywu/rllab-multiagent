@@ -5,7 +5,7 @@ import rllab.plotter as plotter
 from rllab.algos.base import RLAlgorithm
 from rllab.policies.base import Policy
 from rllab.sample_processors.default_sample_processor import DefaultSampleProcessor
-#from rllab.sample_processors.vectorized_sampler import VectorizedSampler
+from rllab.sample_processors.vectorized_sampler import VectorizedSampler
 from rllab.sampler import parallel_sampler
 from rllab.sampler.base import BaseSampler
 
@@ -107,16 +107,16 @@ class BatchPolopt(RLAlgorithm):
         self.store_paths = store_paths
         self.whole_paths = whole_paths
         if sampler_cls is None:
-            # if n_vectorized_envs is None:
-            #     n_vectorized_envs = min(100, max(1, int(np.ceil(batch_size / max_path_length))))
+            if n_vectorized_envs is None:
+                n_vectorized_envs = min(100, max(1, int(np.ceil(batch_size / max_path_length))))
 
             # FIXME commenting out the line below might break things
-            # if self.policy.vectorized:
-            #     self.sampler = VectorizedSampler(env=env, policy=policy, n_envs=n_vectorized_envs, parallel=parallel_vec_env)
-            # else:
+            if self.policy.vectorized:
+                self.sampler = VectorizedSampler(env=env, policy=policy, n_envs=n_vectorized_envs)
+            else:
+                self.sampler = BatchSampler(self, **sampler_args)
             if sampler_args is None:
                 sampler_args = dict()
-            self.sampler = BatchSampler(self, **sampler_args)
 
         if sample_processor_cls is None:
             sample_processor_cls = DefaultSampleProcessor
@@ -136,12 +136,12 @@ class BatchPolopt(RLAlgorithm):
         self.sampler.shutdown_worker()
 
     def obtain_samples(self, itr):
-        # if isinstance(self.sampler, VectorizedSampler):
-        #     return self.sampler.obtain_samples(
-        #         max_path_length=self.max_path_length,
-        #         batch_size=self.batch_size
-        #     )
-        # else:
+        if isinstance(self.sampler, VectorizedSampler):
+            return self.sampler.obtain_samples(
+                max_path_length=self.max_path_length,
+                batch_size=self.batch_size
+            )
+        else:
             return self.sampler.obtain_samples(itr)
 
     def process_samples(self, itr, paths):
