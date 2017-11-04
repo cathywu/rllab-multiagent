@@ -15,14 +15,14 @@ class SharedNPO(BatchPolopt):
             self,
             env,
             optimizer,
-            baseline,
+            baselines,
             NPO_cls=NPO,
             **kwargs):
         # FIXME(cathywu) if env is not passed by reference, this may cause issues
         # TOFIX(eugene) currently assumes that all the shadow envs are the same in action and state space
         self.NPO = NPO_cls(env=env.shadow_envs[0], idx=0, optimizer=optimizer,
-                         baseline=baseline, **kwargs)
-        self.baseline = baseline
+                         baseline=baselines, **kwargs)
+        self.baseline = baselines
         super(SharedNPO, self).__init__(env=env, baseline=None, **kwargs)
 
     @overrides
