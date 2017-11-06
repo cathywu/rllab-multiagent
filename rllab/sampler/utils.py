@@ -16,31 +16,43 @@ def rollout(env, agent, max_path_length=np.inf, animated=False, speedup=1):
     if animated:
         env.render()
     while path_length < max_path_length:
-        a, agent_info = agent.get_action(o)
-        next_o, r, d, env_info = env.step(a)
-        if isinstance(env.observation_space, list):
-            n = len(env.shadow_envs)
-            observations.append(
-                [env.shadow_envs[i].observation_space.flatten_n(o[i]) for i in
-                 range(n)])
-            rewards.append(r)
-            actions.append(
-                [env.shadow_envs[i].action_space.flatten_n(a[i]) for i in range(n)])
+
+        # if we have a multirnn policy, it will need to output multiple actions for a single step
+        if hasattr(env, 'num_actions'):
+            num_actions = env.num_actions
         else:
-            observations.append(env.observation_space.flatten(o))
-            rewards.append(r)
-            actions.append(env.action_space.flatten(a))
-        agent_infos.append(agent_info)
-        env_infos.append(env_info)
-        dones.append(d)
-        path_length += 1
+            num_actions = 1
+        d = 0
+        for _ in range(num_actions):
+            a, agent_info = agent.get_action(o)
+            next_o, r, d, env_info = env.step(a)
+            if isinstance(env.observation_space, list):
+                n = len(env.shadow_envs)
+                observations.append(
+                    [env.shadow_envs[i].observation_space.flatten_n(o[i]) for i in
+                     range(n)])
+                rewards.append(r)
+                actions.append(
+                    [env.shadow_envs[i].action_space.flatten_n(a[i]) for i in range(n)])
+            else:
+                observations.append(env.observation_space.flatten(o))
+                rewards.append(r)
+                actions.append(env.action_space.flatten(a))
+            agent_infos.append(agent_info)
+            env_infos.append(env_info)
+            dones.append(d)
+            path_length += 1
+            if d:
+                break
+            o = next_o
         if d:
             break
-        o = next_o
         if animated:
             env.render()
             timestep = 0.05
             time.sleep(timestep / speedup)
+
+    # this is a gross hack for now
     if animated:
         env.render(close=True)
 
