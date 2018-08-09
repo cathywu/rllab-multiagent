@@ -1,4 +1,4 @@
-name: flow 
+name: flow-rllab
 channels:
     - https://conda.anaconda.org/kne 
 #    - https://conda.anaconda.org/tlatorre 
