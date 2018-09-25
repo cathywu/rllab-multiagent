@@ -6,14 +6,6 @@ import traceback
 # import logging
 from gym.envs.registration import register
 
-
-try:
-    from gym.wrappers.monitoring import logger as monitor_logger
-
-    monitor_logger.setLevel(logging.WARNING)
-except Exception as e:
-    traceback.print_exc()
-
 import os
 import os.path as osp
 from rllab.envs.base import Env, Step
