@@ -28,7 +28,7 @@ AWS_REGION_NAME = "us-west-1"
 if USE_GPU:
     DOCKER_IMAGE = "dementrock/rllab3-shared-gpu"
 else:
-    DOCKER_IMAGE = "dementrock/rllab3-shared"
+    DOCKER_IMAGE = "evinitsky/flow"
 
 DOCKER_LOG_DIR = "/tmp/expt"
 

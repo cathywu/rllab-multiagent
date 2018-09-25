@@ -479,6 +479,7 @@ def run_experiment_lite(
             sync_all_data_node_to_s3=sync_all_data_node_to_s3,
         )
     elif mode == "local":
+        # import ipdb; ipdb.set_trace()
         for task in batch_tasks:
             del task["remote_log_dir"]
             env = task.pop("env", None)
@@ -515,7 +516,7 @@ def run_experiment_lite(
                 use_tty=True,
                 python_command=python_command,
             )
-            print(command)
+            # print(command) # comment out bc annoying af
             if dry:
                 return
             p = subprocess.Popen(command, shell=True)

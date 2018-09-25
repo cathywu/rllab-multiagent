@@ -64,7 +64,6 @@ class MLP(LasagnePowered, Serializable):
             if batch_norm:
                 l_hid = L.batch_norm(l_hid)
             self._layers.append(l_hid)
-
         l_out = L.DenseLayer(
             l_hid,
             num_units=output_dim,

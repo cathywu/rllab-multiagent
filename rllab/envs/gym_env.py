@@ -3,7 +3,7 @@ import gym.wrappers
 import gym.envs
 import gym.spaces
 import traceback
-import logging
+# import logging
 from gym.envs.registration import register
 
 
@@ -172,8 +172,7 @@ def pass_params(env_name, sumo_params, type_params, env_params, net_params,
 
     num_steps = 500
     env_version_num += 1
-    if "num_steps" in env_params.additional_params:
-        num_steps = env_params.additional_params["num_steps"]
+    num_steps = env_params.horizon  
     register(
         id=env_name+'-v'+str(env_version_num),
         entry_point='flow.envs:'+env_name,
